@@ -1,3 +1,17 @@
-__pycache__/
+*.py[co]
 
-test.txt
+# Packages
+*.egg
+*.egg-info
+dist
+build
+eggs
+parts
+bin
+develop-eggs
+.installed.cfg
+scratch
+env
+
+# Installer logs
+pip-log.txt
