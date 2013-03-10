@@ -15,8 +15,6 @@ class KeyValues(collections.MutableMapping):
 
         self._name = name
 
-        self.load()
-
     # Container interface
     def __contains__(self, key):
         return key in self._children
@@ -46,7 +44,7 @@ class KeyValues(collections.MutableMapping):
     def __str__(self):
         return self.stringify()
 
-    def stringify(self, identation=True, inline=False, space="\t"):
+    def stringify(self, indentation=True, inline=False, space="\t"):
         """Returns the data as a string, with optional formating.
 
         The method generates a multiline indented string, in a similar format to
@@ -54,7 +52,7 @@ class KeyValues(collections.MutableMapping):
         the Key Value, without line breaks.
 
         Keyword arguments:
-        identation -- If the result should be indented (default True)
+        indentation -- If the result should be indented (default True)
         inline -- If the string should be returned without line breaks. Setting
         this True will override indentation to False (default False)
         space -- String used to indentation (default "\t")
@@ -62,38 +60,39 @@ class KeyValues(collections.MutableMapping):
 
         line_break = "\n"
         if inline:
-            identation = False
+            indentation = False
             line_break = " "
 
-        if not identation:
+        if not indentation:
             space = ""
 
-        return_str = '"' + str(self._name) + '"' + line_break
-        return_str += self._stringify_recursive(identation, line_break, space, 0)
+        result = '"' + str(self._name) + '"' + line_break
+        result += self._stringify_recursive(indentation, line_break, space, 0)
 
-        return return_str
+        return result
 
-    def _stringify_recursive(self, identation, line_break, space, indentation_level):
+    def _stringify_recursive(self, indentation, line_break, space, indentation_level):
         prefix = space * indentation_level
         prefix_in = space * (indentation_level + 1)
 
-        return_str = prefix + "{" + line_break
+        result = prefix + "{" + line_break
         for key in self._children:
-            return_str += prefix_in + '"' + str(key) + '"'
+            result += prefix_in + '"' + str(key) + '"'
 
             value = self._children[key]
             if isinstance(value, KeyValues):
-                return_str += line_break
-                return_str += value._stringify_recursive(identation, line_break, space, (indentation_level + 1))
+                result += line_break
+                result += value._stringify_recursive(indentation, line_break, space, (indentation_level + 1))
             else:
-                return_str += " "
-                return_str += '"' + str(value) + '"'
+                result += " "
+                # TODO: value string should be properly escape
+                result += '"' + str(value) + '"'
 
-            return_str += line_break
+            result += line_break
 
-        return_str += prefix + "}"
+        result += prefix + "}"
 
-        return return_str
+        return result
 
     def parent():
         """Return the parent object for this KeyValues
@@ -115,9 +114,179 @@ class KeyValues(collections.MutableMapping):
         """Load the KeyValues from the given file
         """
 
-        #TODO: implement KeyValues.load()
-        print("Error: File loading is not implemented yet!")
+        # TODO: improve this implementation
 
+        with open(filename, "r") as f:
+            tokenizer = KeyValuesTokenizer(f.read())
+
+            token = tokenizer.next_token()
+            if not token or token["type"] != "STRING":
+                # TODO: make a better explanation
+                raise Exception("Invalid token")
+
+            self.__init__(token["data"])
+
+            token = tokenizer.next_token()
+            if not token or token["type"] != "BLOCK_BEGIN":
+                # TODO: make a better explanation
+                raise Exception("Invalid token")
+
+            self._parse(tokenizer)
+
+            # We should have nothing left
+            if tokenizer.next_token():
+                raise Exception("Unexpected token at file end")
+
+    def _parse(self, tokenizer):
+        key = None
+
+        while True:
+            token = tokenizer.next_token()
+            if not token:
+                raise Exception("Unexpected file end")
+
+            if key:
+                if token["type"] == "BLOCK_BEGIN":
+                    value = KeyValues(key)
+                    value._parse(tokenizer)
+                    self[key] = value
+                elif token["type"] == "STRING":
+                    self[key] = token["data"]
+                else:
+                    # TODO: make a better explanation
+                    raise Exception("Invalid token" + token["type"])
+                key = None
+            else:
+                if token["type"] == "BLOCK_END":
+                    break
+                if token["type"] != "STRING":
+                    # TODO: make a better explanation
+                    raise Exception("Invalid token")
+                key = token["data"]
+
+
+class KeyValuesTokenizer:
+    """Parser for KeyValuesTokenizer
+
+    This class is not meant to external use
+    """
+
+    def __init__(self, b):
+        self._buffer = b
+        self._position = 0
+        self._last_line_break = 0
+        self._line = 1
+
+    def next_token(self):
+        while True:
+            self._ignore_whitespace()
+            if not self._ignore_comment():
+                break
+
+        # Get the next character and check if we got any character
+        current = self._current()
+        if not current:
+            return False
+
+        # Emit any valid tokens
+        if current == "{":
+            self._forward()
+            return {"type": "BLOCK_BEGIN"}
+        elif current == "}":
+            self._forward()
+            return {"type": "BLOCK_END"}
+        else:
+            data = self._get_string()
+            return {"type": "STRING", "data": data}
+
+    def _get_string(self):
+        escape = False
+        result = ""
+
+        quoted = False
+        if self._current() == "\"":
+            quoted = True
+            self._forward()
+
+        while True:
+            current = self._current()
+
+            # Check if we have any character yet
+            if not current:
+                break
+
+            # These characters are not part of unquoted strings
+            if not quoted and current in "{}":
+                break
+
+            # Check if it's the end of a quoted string
+            if not escape and quoted and current == "\"":
+                break
+
+            # Add the character or escape sequence to the result
+            if escape:
+                escape = False
+                if current == "n":
+                    result += "\n"
+                elif current == "t":
+                    result += "\t"
+                elif current == "\"":
+                    result += "\""
+                elif current == "\\":
+                    result += "\\"
+            elif current == "\\":
+                escape = True
+            else:
+                result += current
+
+            self._forward()
+
+        if quoted:
+            self._forward()
+
+        return result
+
+    def _ignore_whitespace(self):
+        while True:
+            current = self._current()
+
+            if not current:
+                break
+            if current == "\n":
+                # Keep track of this data for debug
+                self._last_line_break = self._position
+                self._line += 1
+            if current not in " \n\t":
+                break
+
+            self._forward()
+
+
+    def _ignore_comment(self):
+        if self._current() == '/' and self._next() == '/':
+            while self._current() != "\n":
+                self._forward()
+            return True
+        return False
+
+    def _current(self):
+        if self._position >= len(self._buffer):
+            return None
+
+        return self._buffer[self._position]
+
+    def _next(self):
+        if (self._position + 1) >= len(self._buffer):
+            return None
+
+        return self._buffer[self._position + 1]
+
+    def _forward(self):
+        self._position += 1
+        return (self._position < len(self._buffer))
+
+    def _location(self):
+        return "line {0}, column {1}".format(self._line, (self._position - self._last_line_break))
 
 if __name__ == '__main__':
     kv = KeyValues("kv")
@@ -155,3 +324,7 @@ if __name__ == '__main__':
     print(str(kv_a))
 
     kv_a.save("kv_a.txt")
+
+    kv = KeyValues("test")
+    kv.load("kv_a.txt")
+    print(kv.stringify())
