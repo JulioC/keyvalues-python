@@ -1,3 +1,4 @@
+from keyvalues import __version__
 from setuptools import setup
 
 setup(
