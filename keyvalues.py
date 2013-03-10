@@ -35,6 +35,8 @@ class KeyValues(collections.MutableMapping):
 
     # MutableMapping interface
     def __setitem__(self, key, value):
+        if isinstance(value, KeyValues):
+            value._parent = self
         self._children[key] = value
 
     def __delitem__(self, key):
@@ -109,7 +111,6 @@ class KeyValues(collections.MutableMapping):
     def load(self, filename=None):
         #TODO: implement KeyValues.load()
         print("Error: File loading is not implemented yet!")
-
 
 if __name__ == '__main__':
     kv = KeyValues("kv")
