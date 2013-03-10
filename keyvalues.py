@@ -9,12 +9,13 @@ class KeyValues(collections.MutableMapping):
     It also implements methods for representing its data as a string.
     """
 
-    _parent = None
-    _children = None
-
-    def __init__(self, parent=None):
-        self._parent = parent
+    def __init__(self, filename=None):
+        self._parent = None
         self._children = collections.OrderedDict()
+
+        self._filename = None
+
+        self.load()
 
     # Container interface
     def __contains__(self, key):
@@ -90,7 +91,22 @@ class KeyValues(collections.MutableMapping):
 
         return return_str
 
+    def parent():
+        """
+        Return the parent object for this KeyValues
+        """
+        return self._parent
 
+    def save(self, filename=None):
+        if filename is None:
+            filename = self.filename
+
+        with open(filename, "w") as f:
+            f.write(str(self))
+
+    def load(self, filename=None):
+        #TODO: implement KeyValues.load()
+        print("Error: File loading is not implemented yet!")
 
 
 if __name__ == '__main__':
@@ -115,7 +131,6 @@ if __name__ == '__main__':
 
     print("\"name\" in kv = {}".format("name" in kv))
 
-
     kv_a = KeyValues()
     kv_a["name"] = "kv_a"
 
@@ -128,3 +143,5 @@ if __name__ == '__main__':
     kv_b["another"] = kv_c
 
     print(str(kv_a))
+
+    kv_a.save("kv_a.txt")
