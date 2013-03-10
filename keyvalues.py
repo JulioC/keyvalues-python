@@ -96,12 +96,14 @@ class KeyValues(collections.MutableMapping):
         return return_str
 
     def parent():
-        """
-        Return the parent object for this KeyValues
+        """Return the parent object for this KeyValues
         """
         return self._parent
 
     def save(self, filename=None):
+        """Save the KeyValues to a file on disk
+        """
+
         if filename is None:
             filename = self.filename
 
@@ -109,8 +111,12 @@ class KeyValues(collections.MutableMapping):
             f.write(str(self))
 
     def load(self, filename=None):
+        """Load the KeyValues from the given file
+        """
+
         #TODO: implement KeyValues.load()
         print("Error: File loading is not implemented yet!")
+
 
 if __name__ == '__main__':
     kv = KeyValues("kv")
