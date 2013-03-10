@@ -17,7 +17,7 @@ Or, for the latest version, cloning the repository and running (require setuptoo
 
     $ python setup.py install
 
-# License
+## License
 
 The KeyValues format is copyright for Valve Corporation.
 
