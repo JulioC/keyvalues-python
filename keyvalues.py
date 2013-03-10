@@ -9,11 +9,11 @@ class KeyValues(collections.MutableMapping):
     It also implements methods for representing its data as a string.
     """
 
-    def __init__(self, filename=None):
+    def __init__(self, name):
         self._parent = None
         self._children = collections.OrderedDict()
 
-        self._filename = None
+        self._name = name
 
         self.load()
 
@@ -61,33 +61,35 @@ class KeyValues(collections.MutableMapping):
         line_break = "\n"
         if inline:
             identation = False
-            line_break = ""
+            line_break = " "
 
         if not identation:
             space = ""
 
-        return_str = "{" + line_break
-        return_str += self._stringify_recursive(identation, line_break, space, 1)
-        return_str += "}"
+        return_str = '"' + str(self._name) + '"' + line_break
+        return_str += self._stringify_recursive(identation, line_break, space, 0)
 
         return return_str
 
     def _stringify_recursive(self, identation, line_break, space, indentation_level):
         prefix = space * indentation_level
+        prefix_in = space * (indentation_level + 1)
 
-        return_str = ""
+        return_str = prefix + "{" + line_break
         for key in self._children:
-            return_str += prefix + '"' + str(key) + '" '
+            return_str += prefix_in + '"' + str(key) + '"'
 
             value = self._children[key]
             if isinstance(value, KeyValues):
-                return_str += "{" + line_break
-                return_str += value._stringify_recursive(identation, line_break, space, indentation_level + 1)
-                return_str += prefix + "}"
+                return_str += line_break
+                return_str += value._stringify_recursive(identation, line_break, space, (indentation_level + 1))
             else:
+                return_str += " "
                 return_str += '"' + str(value) + '"'
 
             return_str += line_break
+
+        return_str += prefix + "}"
 
         return return_str
 
@@ -110,7 +112,7 @@ class KeyValues(collections.MutableMapping):
 
 
 if __name__ == '__main__':
-    kv = KeyValues()
+    kv = KeyValues("kv")
 
     kv["name"] = "Test Model"
     print("kv[\"name\"] = {}".format(kv["name"]))
@@ -131,14 +133,14 @@ if __name__ == '__main__':
 
     print("\"name\" in kv = {}".format("name" in kv))
 
-    kv_a = KeyValues()
+    kv_a = KeyValues("kv_a")
     kv_a["name"] = "kv_a"
 
-    kv_b = KeyValues()
+    kv_b = KeyValues("kv_b")
     kv_b["name"] = "kv_b"
     kv_a["entry"] = kv_b
 
-    kv_c = KeyValues()
+    kv_c = KeyValues("kv_c")
     kv_c["name"] = "kv_c"
     kv_b["another"] = kv_c
 
