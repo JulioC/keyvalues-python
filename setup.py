@@ -13,6 +13,7 @@ setup(
     classifiers=[
         "Development Status :: 3 - Alpha",
         "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3",
     ],
     long_description="""\
     Module for parsing, using and writing files with Key Values format used by Valve.
