@@ -9,7 +9,7 @@ class KeyValues(collections.MutableMapping):
     It also implements methods for representing its data as a string.
     """
 
-    def __init__(self, name):
+    def __init__(self, name=""):
         self._parent = None
         self._children = collections.OrderedDict()
 
@@ -66,7 +66,7 @@ class KeyValues(collections.MutableMapping):
         if not indentation:
             space = ""
 
-        result = '"' + str(self._name) + '"' + line_break
+        result = '"' + self._escape(str(self._name)) + '"' + line_break
         result += self._stringify_recursive(indentation, line_break, space, 0)
 
         return result
@@ -77,7 +77,7 @@ class KeyValues(collections.MutableMapping):
 
         result = prefix + "{" + line_break
         for key in self._children:
-            result += prefix_in + '"' + str(key) + '"'
+            result += prefix_in + '"' + self._escape(str(key)) + '"'
 
             value = self._children[key]
             if isinstance(value, KeyValues):
@@ -86,13 +86,19 @@ class KeyValues(collections.MutableMapping):
             else:
                 result += " "
                 # TODO: value string should be properly escape
-                result += '"' + str(value) + '"'
+                result += '"' + self._escape(str(value)) + '"'
 
             result += line_break
 
         result += prefix + "}"
 
         return result
+
+    def _escape(self, text):
+        for char in "\\\"":
+            text = text.replace(char, '\\' + char)
+        return text
+
 
     def parent():
         """Return the parent object for this KeyValues
@@ -226,11 +232,7 @@ class KeyValuesTokenizer:
             # Add the character or escape sequence to the result
             if escape:
                 escape = False
-                if current == "n":
-                    result += "\n"
-                elif current == "t":
-                    result += "\t"
-                elif current == "\"":
+                if current == "\"":
                     result += "\""
                 elif current == "\\":
                     result += "\\"
