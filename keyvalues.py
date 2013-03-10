@@ -43,7 +43,7 @@ class KeyValues(collections.MutableMapping):
     def __str__(self):
         return self.stringify()
 
-    def stringify(self, identation=True, inline=False, space="\t", prefix=""):
+    def stringify(self, identation=True, inline=False, space="\t"):
         """Returns the data as a string, with optional formating.
 
         The method generates a multiline indented string, in a similar format to
@@ -55,7 +55,6 @@ class KeyValues(collections.MutableMapping):
         inline -- If the string should be returned without line breaks. Setting
         this True will override indentation to False (default False)
         space -- String used to indentation (default "\t")
-        prefix -- Previous prefix to append on each line. Internal usage
         """
 
         line_break = "\n"
@@ -63,29 +62,35 @@ class KeyValues(collections.MutableMapping):
             identation = False
             line_break = ""
 
-        prefix_in = prefix
-        if identation:
-            prefix_in = prefix + space
+        if not identation:
+            space = ""
+
+        return_str = "{" + line_break
+        return_str += self._stringify_recursive(identation, line_break, space, 1)
+        return_str += "}"
+
+        return return_str
+
+    def _stringify_recursive(self, identation, line_break, space, indentation_level):
+        prefix = space * indentation_level
 
         return_str = ""
-        return_str += prefix + "{" + line_break
-
         for key in self._children:
-            return_str += prefix_in + '"' + str(key) + '"'
+            return_str += prefix + '"' + str(key) + '" '
 
             value = self._children[key]
             if isinstance(value, KeyValues):
-                return_str += line_break
-                return_str += value.stringify(identation, inline, space, prefix_in)
+                return_str += "{" + line_break
+                return_str += value._stringify_recursive(identation, line_break, space, indentation_level + 1)
+                return_str += prefix + "}"
             else:
-                return_str += " "
                 return_str += '"' + str(value) + '"'
 
             return_str += line_break
 
-        return_str += prefix + "}"
-
         return return_str
+
+
 
 
 if __name__ == '__main__':
@@ -120,6 +125,6 @@ if __name__ == '__main__':
 
     kv_c = KeyValues()
     kv_c["name"] = "kv_c"
-    kv_a["another"] = kv_c
+    kv_b["another"] = kv_c
 
     print(str(kv_a))
