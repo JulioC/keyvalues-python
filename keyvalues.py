@@ -325,8 +325,8 @@ if __name__ == '__main__':
 
     print(str(kv_a))
 
-    kv_a.save("kv_a.txt")
+    kv_a.save("test.txt")
 
     kv = KeyValues("test")
-    kv.load("kv_a.txt")
+    kv.load("test.txt")
     print(kv.stringify())
