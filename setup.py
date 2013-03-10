@@ -2,7 +2,7 @@ from keyvalues import __version__
 from setuptools import setup
 
 setup(
-    name = "KeyValues",
+    name = "keyvalues",
     version = __version__,
     author = "Júlio César",
     author_email = "julio@julioc.me",
