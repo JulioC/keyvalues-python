@@ -1,5 +1,5 @@
-KeyValues.py
-============
+KeyValues
+=========
 
 Module for parsing, using and writing files with Key Values format used by Valve.
 
