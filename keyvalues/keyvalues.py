@@ -303,7 +303,7 @@ class KeyValuesTokenizer:
                 after_space = True
             if after_space:
                 filename += self._current()
-        return filename.strip()
+        return filename.strip().replace('"','').replace("'","")
 
     def _current(self):
         if self._position >= len(self._buffer):
@@ -379,7 +379,7 @@ if __name__ == '__main__':
     kv_macro_child = KeyValues()
     kv_macro_child['name'] = "anything2"
     kv_macro['child2'] = kv_macro_child
-    str_kv = "#base test_macro_in_another_macro.txt\n" + str(kv_macro)
+    str_kv = "#base \"test_macro_in_another_macro.txt\"\n" + str(kv_macro)
     f = open("dirname/macro_test1.txt","w")
     f.write(str_kv)
     

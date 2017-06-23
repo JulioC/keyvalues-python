@@ -1,4 +1,4 @@
-#base test_macro_in_another_macro.txt
+#base "test_macro_in_another_macro.txt"
 "kv_anyheader"
 {
 	"has_macro2" "2"
