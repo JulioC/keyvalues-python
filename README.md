@@ -7,7 +7,7 @@ The parser is supposed to follow the format specification, which is reproduced o
 
 ## Installation
 
-The package can be installed with [pip](http://www.pip-installer.org/en/latest/):
+The package can be installed with [pip](http://www.pip-installer.org/en/latest/) **(OUTDATED)**:
 
     $ pip install keyvalues
 
