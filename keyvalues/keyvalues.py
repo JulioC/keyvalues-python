@@ -1,3 +1,4 @@
+import os
 import collections
 
 class KeyValues(collections.MutableMapping):
@@ -122,15 +123,33 @@ class KeyValues(collections.MutableMapping):
 
         # TODO: improve this implementation
 
+
+
         with open(filename, "r") as f:
             tokenizer = KeyValuesTokenizer(f.read())
 
             token = tokenizer.next_token()
+            
+            # parse macros before main body
+            while token and token['type'] == "MACROS":
+                filepath = os.path.dirname(filename)
+                if filepath != "":
+                    filepath += "/"
+                macro_file = token['data']
+                macro = KeyValues()
+                macro.load(filepath + macro_file)
+                # merge keyvalues from macro files
+                for key in macro._children:
+                    self[key] = macro._children[key]
+                    if isinstance(macro._children[key], KeyValues):
+                        macro._children[key]._parent = self
+                token = tokenizer.next_token()
+
             if not token or token["type"] != "STRING":
                 # TODO: make a better explanation
                 raise Exception("Invalid token")
 
-            self.__init__(token["data"])
+            self._name = token['data']
 
             token = tokenizer.next_token()
             if not token or token["type"] != "BLOCK_BEGIN":
@@ -201,6 +220,10 @@ class KeyValuesTokenizer:
         elif current == "}":
             self._forward()
             return {"type": "BLOCK_END"}
+        elif current == "#":
+            macro_file_path = self._get_macros()
+            self._forward()
+            return {"type": "MACROS", "data": macro_file_path}
         else:
             data = self._get_string()
             return {"type": "STRING", "data": data}
@@ -271,6 +294,17 @@ class KeyValuesTokenizer:
             return True
         return False
 
+    def _get_macros(self):
+        filename = ''
+        after_space = False
+        while self._current() != '\n':
+            self._forward()
+            if self._current() == ' ':
+                after_space = True
+            if after_space:
+                filename += self._current()
+        return filename.strip().replace('"','').replace("'","")
+
     def _current(self):
         if self._position >= len(self._buffer):
             return None
@@ -330,3 +364,38 @@ if __name__ == '__main__':
     kv = KeyValues("test")
     kv.load("test.txt")
     print(kv.stringify())
+
+    # macro test
+    kv_macro = KeyValues("kv_anyheader")
+    kv_macro['has_macro1'] = "1"
+    kv_macro_child = KeyValues()
+    kv_macro_child['name'] = "anything1"
+    kv_macro['child1'] = kv_macro_child
+    kv_macro.save("macro_test.txt")
+
+    # macro test
+    kv_macro = KeyValues("kv_anyheader")
+    kv_macro['has_macro2'] = "2"
+    kv_macro_child = KeyValues()
+    kv_macro_child['name'] = "anything2"
+    kv_macro['child2'] = kv_macro_child
+    str_kv = "#base \"test_macro_in_another_macro.txt\"\n" + str(kv_macro)
+    f = open("dirname/macro_test1.txt","w")
+    f.write(str_kv)
+    
+    kv_macro_test_1 = KeyValues("lalala")
+    kv_macro_test_1["macro_3"] = "3"
+    kv_macro_test_1.save("dirname/test_macro_in_another_macro.txt")
+
+    f = open("test.txt", "r")
+    content = f.read()
+    f.close()
+    f = open("test.txt", "w")
+    content = "#base macro_test.txt\n" + content
+    content = "#base dirname/macro_test1.txt\n" + content
+    f.write(content)
+    f.close()
+
+    kv_macro_load = KeyValues("test_macro")
+    kv_macro_load.load("test.txt")
+    print(kv_macro_load)

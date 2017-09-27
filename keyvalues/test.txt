@@ -1,0 +1,14 @@
+#base dirname/macro_test1.txt
+#base macro_test.txt
+"kv_a"
+{
+	"name" "kv_a"
+	"entry"
+	{
+		"name" "kv_b"
+		"another"
+		{
+			"name" "kv_c"
+		}
+	}
+}

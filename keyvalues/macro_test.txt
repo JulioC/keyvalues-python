@@ -1,0 +1,8 @@
+"kv_anyheader"
+{
+	"has_macro1" "1"
+	"child1"
+	{
+		"name" "anything1"
+	}
+}
